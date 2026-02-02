@@ -19,7 +19,7 @@ display_time_stats = True
 
 # optimization
 
-evaluations = 1000
+evaluations = 1500
 it_per_evaluation = 400
 max_iterations = evaluations * it_per_evaluation + 1
 
