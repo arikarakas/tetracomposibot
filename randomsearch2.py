@@ -46,6 +46,8 @@ class Robot_player(Robot):
         self.y_0 = y_0
         self.theta_0 = theta_0
 
+        self.theta_list = [0, 120, 240]
+
         self.param = [random.randint(-1, 1) for i in range(8)]
 
         if it_per_evaluation != 0:
@@ -57,6 +59,8 @@ class Robot_player(Robot):
 
     def reset(self):
         super().reset()
+        self.theta = self.theta_list[self.run_id]
+        print("\t", self.run_id, " ", self.theta)
         self.prev_log_translation = 0.0
         self.prev_log_rotation = 0.0
 
