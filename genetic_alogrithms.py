@@ -1,10 +1,12 @@
 
 from robot import * 
 import math
+import os
 import random
 
 nb_robots = 0
 debug = False
+LOG_PATH = os.path.join("multiplotCSV", "data", "genetic_log.csv")
 
 class Robot_player(Robot):
 
@@ -100,6 +102,11 @@ class Robot_player(Robot):
                         self.param = self.bestParam[:]
 
                     print("Generation", self.trial, "| child score =", self.score_total, "| parent score =", self.best_score, "|", "ACCEPT" if accepted else "REJECT")
+                    line = f"{self.trial},{self.score_total},{self.best_score}"
+                    print(line)
+                    with open(LOG_PATH, "a") as f:
+                        f.write(line + "\n")
+
                     if accepted:
                         print("NEW BEST at trial", self.best_essaie, "score =", self.best_score, "params =", self.bestParam)
 

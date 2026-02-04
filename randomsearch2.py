@@ -1,10 +1,12 @@
 
 from robot import * 
 import math
+import os
 import random
 
 nb_robots = 0
 debug = False
+LOG_PATH = os.path.join("multiplotCSV", "data", "randomsearch2_log.csv")
 
 class Robot_player(Robot):
 
@@ -86,6 +88,12 @@ class Robot_player(Robot):
                         self.prev_rotation = self.log_sum_of_rotation
                         self.iteration = self.iteration + 1
                         return 0, 0, True # ask for reset
+                    else:
+                        line = f"{self.trial},{self.score_total},{max(self.best_score, self.score_total)}"
+                        print(line)
+                        with open(LOG_PATH, "a") as f:
+                            f.write(line + "\n")
+
 
                     if self.score_total > self.best_score:
                         self.best_score = self.score_total
