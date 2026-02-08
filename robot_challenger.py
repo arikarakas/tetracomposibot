@@ -39,8 +39,11 @@ class Robot_player(Robot):
           0 = normal
           1 = escape (mur imminent)
           2 = hunt (ennemi détecté)
+          3 = mode de secours
         timer:
           compteur (durée restante du mode)
+        last_dist:
+          dernier distance parcourue
         """
         timer = mem % 100
         mode = (mem // 100) % 10
@@ -100,16 +103,16 @@ class Robot_player(Robot):
         est_robot2_pixels = (rid == 2)  # Robot 2: "max pixels" (avance vite si possible)
         est_robot3_agresif = (rid == 3) # Robot 3: suit les autres robots agressivement
 
-        #Evitement murs
+        # Evitement murs
         POIDS_MUR_STD = [0.10, 0.90, 0.60, 0.05, 0.00, 0.05, -0.60, -0.90]
 
-        #Répulsion allié (anti-train)
+        # Répulsion allié (anti-train)
         POIDS_ALLIE_REP = [0.00, -0.70, -0.50, 0.00, 0.00, 0.00, 0.50, 0.70]
 
-        #Poids "GA" (Robot 0) optimisés 
+        # Poids "GA" (Robot 0) optimisés 
         POIDS_MUR_GA = [1.0, -1.0, 0.0, 1.0, 1.0, 1.0, -1.0, -1.0]
 
-
+        # Fonctions utilitaires
         def ennemi_dans_arc(indices):
             """True si un ennemi est vu par ces capteurs."""
             if sensor_view is None or sensor_team is None:
@@ -152,6 +155,7 @@ class Robot_player(Robot):
         current_dist = self.log_sum_of_translation
         deplacement = abs(current_dist - last_dist)
 
+        # Déclenchement du mode de secours
         if mode != 3 and deplacement < 0.1:
             timer += 2
             if timer > 40:
@@ -160,7 +164,7 @@ class Robot_player(Robot):
         elif mode == 0:
             timer = 0
 
-        # Gestion des autres modes
+        # Mise à jour du compteur de temps
         if mode != 0:
             if timer > 0: timer -= 1
             else: mode = 0
@@ -216,6 +220,7 @@ class Robot_player(Robot):
             w_hunt, w_wall = 1.0, 0.3
             vitesse = 0.60
 
+            # Agressivité selon le rôle
             if est_robot3_agresif:
                 w_hunt, w_wall = 1.2, 0.2
                 vitesse = 0.60
@@ -228,9 +233,10 @@ class Robot_player(Robot):
 
             rotation = self.borne(w_wall * rot_mur + w_hunt * dir_ennemi)
 
-            if sensor_to_robot[sensor_front] < 0.25: 
-                vitesse *= 0.4
+            vitesse = 0.85 if est_robot3_agresif else 0.75
+            vitesse *= 0.2 + 0.8 * sensor_to_robot[sensor_front]
 
+            # Evitement de collision entre alliés
             if allie_trop_proche_devant():
                 evitement = -0.7 if dir_ennemi > 0 else 0.7
                 rotation = self.borne(rotation + evitement)
@@ -241,7 +247,9 @@ class Robot_player(Robot):
         
         # PRIORITE 3 : COMPORTEMENT NORMAL
         else:
+            # Stratégie spécifique pour le suiveur de mur (Robot 1)
             if est_robot1_mur:
+                # Anti-boucle
                 if (timer + self.robot_id) % 200 < 8:
                     translation = 0.7
                     rotation = 0.0
@@ -266,6 +274,8 @@ class Robot_player(Robot):
                 
                 self.memory = self.ecrire_memoire(mode, timer, current_dist)
                 return self.borne(translation), self.borne(rotation), False
+            
+            # Stratégies d'exploration pour les autres robots
             else:
                 if est_robot2_pixels:
                     base_speed = 0.78
@@ -288,7 +298,8 @@ class Robot_player(Robot):
                     rotation = self.borne(rotation + 0.55 * self.braitenberg_rotation(sensors, POIDS_MUR_GA))
                 else:
                     rotation = self.borne(rotation + 0.55 * self.braitenberg_rotation(sensors, POIDS_MUR_STD))
-        
+
+                # Mode turbo pour Robot 2
                 if est_robot2_pixels:
                     if dF > 0.75 and dFL > 0.65 and dFR > 0.65:
                         translation = 0.90
