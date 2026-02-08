@@ -1,3 +1,12 @@
+# Projet "robotique" IA&Jeux 2025
+#
+# Binome:
+#  Prénom Nom No_étudiant/e : Ari Karakas 21313611
+#  Prénom Nom No_étudiant/e : _________
+#
+# check robot.py for sensor naming convention
+# all sensor and motor value are normalized (from 0.0 to 1.0 for sensors, -1.0 to +1.0 for motors)
+
 from robot import *
 import random
 
@@ -5,7 +14,7 @@ nb_robots = 0
 
 class Robot_player(Robot):
 
-    team_name = "notre strategie "  #change si tu veux
+    team_name = "notre strategie"
 
     robot_id = -1
     memory = 0  # un seul entier autorisé (obligatoire)
@@ -94,9 +103,6 @@ class Robot_player(Robot):
         #Evitement murs
         POIDS_MUR_STD = [0.10, 0.90, 0.60, 0.05, 0.00, 0.05, -0.60, -0.90]
 
-        #Attraction ennemi
-        POIDS_ENNEMI_STD = [0.00, 0.80, 0.40, 0.00, 0.00, 0.00, -0.40, -0.80]
-
         #Répulsion allié (anti-train)
         POIDS_ALLIE_REP = [0.00, -0.70, -0.50, 0.00, 0.00, 0.00, 0.50, 0.70]
 
@@ -150,9 +156,9 @@ class Robot_player(Robot):
         if mode != 3 and deplacement < 0.1:
             print(f"Robot {self.robot_id} Sıkıştı")
             timer += 2
-            if timer > 30:
+            if timer > 40:
                 mode = 3
-                timer = 40
+                timer = 45
         elif mode == 0:
             timer = 0
 
@@ -161,30 +167,44 @@ class Robot_player(Robot):
             if timer > 0: timer -= 1
             else: mode = 0
         
+        # PRIORITE 0 : EVITEMENT DE SE COINCER
         if mode == 3:
-            if timer > 20:
-                translation = -0.5
-                rotation = 0.3
-            else:
-                translation = 0.2
+            # Verifie a quel point la voie devant est libre
+            libre = sensor_to_wall[sensor_front] > 0.6
+            # reculer 10 pas
+            if timer > 35:
+                translation = -0.3
+                rotation = 0.2
+            # tourner jusqu'a la voie soit libre
+            elif not libre and timer > 1:
+                translation = 0.0
                 rotation = 1.0
+            # sortir de la manoeuvre si la voie est libre ou si le temps est écoulé
+            else:
+                translation = 0.6
+                rotation = 0.0
+                if timer <= 1: 
+                    mode = 0
+
             self.memory = self.ecrire_memoire(mode, timer, current_dist)
             return translation, rotation, False
+
         
         # PRIORITE 1 : EVITEMENT DE MUR
-        mur_urgence = (sensor_to_wall[sensor_front] < 0.18) or (sensor_to_wall[sensor_front_left] < 0.15) or (sensor_to_wall[sensor_front_right] < 0.15)
         mur_proche = (sensor_to_wall[sensor_front] < 0.30) or (sensor_to_wall[sensor_front_left] < 0.25) or (sensor_to_wall[sensor_front_right] < 0.25)
-        
-        if mur_urgence:
+        mur_urgence = (sensor_to_wall[sensor_front] < 0.18) or (sensor_to_wall[sensor_front_left] < 0.15) or (sensor_to_wall[sensor_front_right] < 0.15)
+    
+        if mur_urgence and mode == 0 and not est_robot1_mur:
+            mode = 1
+            timer = 15
+
+        if mode == 1 and timer > 0:
             left = (1.0 - sensor_to_wall[sensor_front_left]) * 1.4 + (1.0 - sensor_to_wall[sensor_left]) * 0.9
             right = (1.0 - sensor_to_wall[sensor_front_right]) * 1.4 + (1.0 - sensor_to_wall[sensor_right]) * 0.9
-
-            front_safe = min(sensor_to_wall[sensor_front],sensor_to_wall[sensor_front_left],sensor_to_wall[sensor_front_right])
-
-            translation = 0.02 + 0.4 * front_safe
+            
+            translation = 0.3
             rotation = 1.2 * (right - left) + 0.02
-            mode = 1
-            timer = 12
+            
             self.memory = self.ecrire_memoire(mode, timer, current_dist)
             return translation, rotation, False
 
@@ -221,23 +241,30 @@ class Robot_player(Robot):
             self.memory = self.ecrire_memoire(mode, timer, current_dist)
             return vitesse, rotation, False
         
-        # PRIORITÉ 3 : COMPORTEMENT NORMAL
+        # PRIORITE 3 : COMPORTEMENT NORMAL
         else:
             if est_robot1_mur:
-                target_dist = 0.3
+                if (timer + 1) % 200 < 8:
+                    translation = 0.7
+                    rotation = 0.0
+                    self.memory = self.ecrire_memoire(mode, timer, current_dist)
+                    return translation, rotation, False
+                
+                target_dist = 0.35
                 
                 if sensor_to_wall[sensor_right] < 0.8:
                     error = target_dist - sensor_to_wall[sensor_right]
-                    rotation = error * 2.5
-                    translation = 0.6
+                    rotation = error * 5.5
+                    translation = 0.65
                     
-                    if sensor_to_wall[sensor_front] < 0.3 or sensor_to_wall[sensor_front_left] < 0.3:
+                    if sensor_to_wall[sensor_front] < 0.2 or sensor_to_wall[sensor_front_left] < 0.2:
                         rotation = 0.8
                         translation = 0.4
                 
                 else:
                     translation = 0.6
-                    rotation = self.borne(0.9 * (sensor_to_wall[sensor_front_left] - sensor_to_wall[sensor_front_right])) - 0.15
+                    bias = -0.1 if timer % 40 < 30 else 0.1 
+                    rotation = self.borne(0.9 * (sensor_to_wall[sensor_front_left] - sensor_to_wall[sensor_front_right])) + bias
                 
                 self.memory = self.ecrire_memoire(mode, timer, current_dist)
                 return self.borne(translation), self.borne(rotation), False
