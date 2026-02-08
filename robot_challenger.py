@@ -244,7 +244,7 @@ class Robot_player(Robot):
         # PRIORITE 3 : COMPORTEMENT NORMAL
         else:
             if est_robot1_mur:
-                if (timer + 1) % 200 < 8:
+                if (timer + self.robot_id) % 200 < 8:
                     translation = 0.7
                     rotation = 0.0
                     self.memory = self.ecrire_memoire(mode, timer, current_dist)
