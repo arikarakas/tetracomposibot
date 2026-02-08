@@ -151,10 +151,8 @@ class Robot_player(Robot):
 
         current_dist = self.log_sum_of_translation
         deplacement = abs(current_dist - last_dist)
-        print(f"Robot {self.robot_id} | Mod: {mode} | Dep: {deplacement:.3f} | dF: {dF:.2f}")
 
         if mode != 3 and deplacement < 0.1:
-            print(f"Robot {self.robot_id} Sıkıştı")
             timer += 2
             if timer > 40:
                 mode = 3
