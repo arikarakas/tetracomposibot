@@ -2,7 +2,7 @@
 #
 # Binome:
 #  Prénom Nom No_étudiant/e : Ari Karakas 21313611
-#  Prénom Nom No_étudiant/e : _________
+#  Prénom Nom No_étudiant/e : Amrani Leiticia 21322966
 #
 # check robot.py for sensor naming convention
 # all sensor and motor value are normalized (from 0.0 to 1.0 for sensors, -1.0 to +1.0 for motors)
@@ -14,7 +14,7 @@ nb_robots = 0
 
 class Robot_player(Robot):
 
-    team_name = "notre strategie"
+    team_name = "DRPN"
 
     robot_id = -1
     memory = 0  # un seul entier autorisé (obligatoire)
